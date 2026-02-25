@@ -21,7 +21,7 @@ class StoreExpenseRequest extends FormRequest
             'amount' => 'required|numeric|min:0.01',
             'tax' => 'nullable|numeric|min:0',
             'tip' => 'nullable|numeric|min:0',
-            'participant_ids' => 'required|array,min:1',
+            'participant_ids' => 'required|array|min:1',
             'participant_ids.*' => 'required|integer|exists:users,id|distinct',
             'items' => 'required|array|min:1',
             'items.*.name' => 'required|string|max:255',

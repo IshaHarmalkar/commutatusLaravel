@@ -30,7 +30,7 @@ class ExpenseController extends Controller
             ]);
 
             // add participants->including creditor
-            $participantIds = collect($request->participants_ids)->push(Auth::id())->unique()->values()->toArray();
+            $participantIds = collect($request->participant_ids)->push(Auth::id())->unique()->values()->toArray();
 
             // add participants to db
             foreach ($participantIds as $userId) {

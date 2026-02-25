@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 class Expense extends Model
 {
     protected $fillable = [
-        'paid_by_user',
+        'paid_by_id',
         'name',
         'amount',
         'tax',
@@ -18,7 +18,7 @@ class Expense extends Model
     ];
 
     protected $casts = [
-        'ammount' => 'decimal:2',
+        'amount' => 'decimal:2',
         'tax' => 'decimal:2',
         'tip' => 'decimal:2',
     ];
