@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('expense_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('expense_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
             $table->string('name');
             $table->decimal('amount', 10, 2);
             $table->enum('type', ['equal', 'assigned']);
             $table->foreignId('assigned_to_id')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamps();
         });
     }

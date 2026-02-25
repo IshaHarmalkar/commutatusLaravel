@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExpenseItem extends Model
 {
-    protected $fillable = [ 
+    protected $fillable = [
         'expense_id',
         'name',
         'amount',
@@ -16,17 +16,20 @@ class ExpenseItem extends Model
         'assigned_to_id',
     ];
 
-    protected $casts = ['amount' => 'decimal:2',];
+    protected $casts = ['amount' => 'decimal:2'];
 
-    public function expense(): BelongsTo{
+    public function expense(): BelongsTo
+    {
         return $this->belongsTo(Expense::class);
     }
 
-    public function assignedTo(): BelongsTo{
+    public function assignedTo(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
-    public function splits(): HasMany{
+    public function splits(): HasMany
+    {
         return $this->hasMany(ExpenseItemSplit::class);
     }
 }

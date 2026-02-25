@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::create('expense_item_splits', function (Blueprint $table) {
             $table->id();
             $table->foreignId('expense_item_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
             $table->foreignId('creditor_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
+                ->constrained('users')
+                ->cascadeOnDelete();
             $table->foreignId('debtor_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
+                ->constrained('users')
+                ->cascadeOnDelete();
             $table->decimal('amount', 10, 2);
             $table->timestamps();
         });

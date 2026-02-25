@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-
 class Expense extends Model
 {
     protected $fillable = [
@@ -18,17 +17,19 @@ class Expense extends Model
         'tip',
     ];
 
-    protected $casts = [ 
+    protected $casts = [
         'ammount' => 'decimal:2',
-        'tax'     => 'decimal:2',
-        'tip'     => 'decimal:2',
+        'tax' => 'decimal:2',
+        'tip' => 'decimal:2',
     ];
 
-    public function paidBy(): BelongsTo {
-        return $this->belongsTo(User::class, 'paid_by_id');  //creditor_id
+    public function paidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by_id');  // creditor_id
     }
 
-    public function participants(): HasMany{
+    public function participants(): HasMany
+    {
         return $this->hasMany(Participant::class);
     }
 
@@ -37,13 +38,11 @@ class Expense extends Model
         return $this->hasMany(ExpenseItem::class);
     }
 
-    public function splits(): HasManyThrough{
+    public function splits(): HasManyThrough
+    {
         return $this->hasManyThrough(
             ExpenseItemSplit::class,
             ExpenseItem::class
         );
     }
-
-
-
 }

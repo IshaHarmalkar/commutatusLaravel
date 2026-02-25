@@ -18,17 +18,18 @@ class ExpenseItemSplit extends Model
         'amount' => 'decimal:2',
     ];
 
-    public function expenseItem():BelongsTo{
+    public function expenseItem(): BelongsTo
+    {
         return $this->belongsTo(ExpenseItem::class);
     }
 
-    public function creditor(): BelongsTo{
+    public function creditor(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'creditor_id');
     }
 
-    public function debtor(): BelongsTo{
+    public function debtor(): BelongsTo
+    {
         return $this->belongsTo(User::class, 'debtor_id');
     }
-
-
 }

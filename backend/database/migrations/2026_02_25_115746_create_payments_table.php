@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('debtor_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
-                //debtor id is from user id, the user paying back
-                $table->foreignId('creditor_id')
-                      ->constrained('users')
-                      ->cascadeOnDelete();
-                //creditor tp user-> the payment is received by this person
-                $table->decimal('amount', 10, 2);
-                $table->timestamps();
+                ->constrained('users')
+                ->cascadeOnDelete();
+            // debtor id is from user id, the user paying back
+            $table->foreignId('creditor_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+            // creditor tp user-> the payment is received by this person
+            $table->decimal('amount', 10, 2);
+            $table->timestamps();
         });
     }
 

@@ -12,11 +12,13 @@ class Participant extends Model
         'user_id',
     ];
 
-    public function expense(): BelongsTo{
+    public function expense(): BelongsTo
+    {
         return $this->belongs(Expense::class);
     }
 
-    public function User(): BelongsTo{
+    public function User(): BelongsTo
+    {
         return $this->belongsTo(User::class);
     }
 }

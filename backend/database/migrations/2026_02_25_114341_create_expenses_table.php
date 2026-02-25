@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('paid_by_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
+                ->constrained('users')
+                ->cascadeOnDelete();
             $table->string('name');
             $table->decimal('amount', 10, 2);
             $table->decimal('tax', 10, 2)->default(0);

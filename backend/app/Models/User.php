@@ -47,33 +47,37 @@ class User extends Authenticatable
         ];
     }
 
-    //expenses paid by user -> user is creditor here
-    public function paidExpenses(): HasMany{
-        return $this->hasMany(Participant::class, 'user_id');       
-    }
-
-    public function participatedExpenses(): HasMany {
+    // expenses paid by user -> user is creditor here
+    public function paidExpenses(): HasMany
+    {
         return $this->hasMany(Participant::class, 'user_id');
     }
 
-    public function creditorSplits():HasMany{
+    public function participatedExpenses(): HasMany
+    {
+        return $this->hasMany(Participant::class, 'user_id');
+    }
+
+    public function creditorSplits(): HasMany
+    {
         return $this->hasMany(ExpennseItemSplit::class, 'creditor_id');
     }
 
-    //payments paid
-    public function sentPayments(): HasMany{
+    // payments paid
+    public function sentPayments(): HasMany
+    {
         return $this->hasMany(Payment::class, 'debtor_id');
     }
 
-    //payments received
-    public function receivedPayments(): HasMany{
+    // payments received
+    public function receivedPayments(): HasMany
+    {
         return $this->hasMany(Payment::class, 'creditor_id');
     }
 
-    //item amount
-    public function assignedItems(): HasMany{
+    // item amount
+    public function assignedItems(): HasMany
+    {
         return $this->hasMany(ExpenseItem::class, 'assigned_to_id');
     }
-
-
 }
