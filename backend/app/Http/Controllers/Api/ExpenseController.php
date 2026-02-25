@@ -12,6 +12,8 @@ use App\Models\Participant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+
 
 class ExpenseController extends Controller
 {
@@ -136,5 +138,72 @@ class ExpenseController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    public function index(Request $request): JsonResponse{
+
+        //get expenses where the user is creditor or a participant.
+        //expenses where the user was involved
+        $expenses = Expense::query()
+                    ->where('paid_by_id', Auth::id())
+                    ->orWhereHas('participants', function ($query){
+                        $query->where('user_id', Auth::id());
+                    })->with([
+                        'paidBy',
+                        'participants.user',
+                        'items.splits.creditor',
+                        'items.splits.debtor',
+                    ])->latest()->paginate(15);
+
+        return response()->json([
+            'data' => ExpenseResource::collection($expenses->items()),
+            'meta' => [
+                'current_page' => $expenses->currentPage(),
+                'last_page' => $expenses->lastPage(),
+                'per_page' => $expenses->perPage(),
+                'total' => $expenses->total(),
+            ],
+        ]);
+
+
+    }
+
+    public function show(Expense $expense): JsonResponse{
+
+    $isMemeber = $expense->paid_by_id === Auth::id() || $expense->participants()->where('user_id', Auth::id())->exists();
+
+    if(!$isMemeber) {
+        return response()->json([
+            'message' => 'You do not have access to this expense',
+        ], 403);
+    }
+
+    $expense->load([
+        'paidBy',
+        'participants.user',
+        'items.assignedTo',
+        'items.splits.creditor',
+        'items.splits.debtor',
+    ]);
+
+    //ambiguity
+    //$youOwe = $expense->splits()->where('debtor_id', Auth::id())->sum('amount');
+    //$owedToYou = $expense->splits()->where('creditor_id', Auth::id())->sum('amount');
+
+    $youOwe = $expense->splits()->where('debtor_id', Auth::id())->sum('expense_item_splits.amount');
+    $owedToYou = $expense->splits()->where('creditor_id', Auth::id())->sum('expense_item_splits.amount');
+
+    return response()->json([
+        'data' => [
+            'expense' => new ExpenseResource($expense),
+            'your_summary' =>  [
+                'you_owe' => round((float) $youOwe, 2),
+                'owed_to_you' => round((float) $owedToYou, 2),
+                'net'  => round((float) $owedToYou - (float) $youOwe, 2),
+            ],
+        ],
+    ]);
+
     }
 }

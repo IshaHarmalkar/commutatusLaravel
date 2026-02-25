@@ -10,6 +10,9 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/expense', [ExpenseController::class, 'store']);
+    Route::get('/expenses', [ExpenseController::class, 'index']);
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show']);
+
 
 }); 
 
