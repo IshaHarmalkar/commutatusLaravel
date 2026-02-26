@@ -27,8 +27,8 @@ class PaymentController extends Controller
             ->where('debtor_id', $toUserId)
             ->sum('amount');
 
-        $alreadyPaid = (float) Payment::where('from_user_id', $me)
-            ->where('to_user_id', $toUserId)
+        $alreadyPaid = (float) Payment::where('debtor_id', $me)
+            ->where('creditor_id', $toUserId)
             ->sum('amount');
 
         $friendAlreadyPaid = (float) Payment::where('debtor_id', $toUserId)
@@ -45,6 +45,11 @@ class PaymentController extends Controller
 
         }
 
+    /*     // Floating point comparison buffer (0.01) to prevent "You owe 116.670000001" errors
+    if ($amount > ($net + 0.01)) {
+        return response()->json(['message' => 'You are overpaying. You only owe ' . round($net, 2) . '.'], 422);
+    }
+ */
         if ($amount > $net) {
             return response()->json([
                 'message' => 'You are overpaying. You only owe '.round($net, 2).'.',
@@ -69,7 +74,7 @@ class PaymentController extends Controller
                 'to' => ['id' => $toUserId, 'name' => $toUser->name],
                 'amount' => $payment->amount,
                 'notes' => $payment->notes,
-                'created_at' => $payment->created_at->toDataTimeString(),
+                'created_at' => $payment->created_at->toDateTimeString(),
 
             ],
             'balance_after' => [

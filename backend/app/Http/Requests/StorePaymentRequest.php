@@ -21,7 +21,7 @@ class StorePaymentRequest extends FormRequest
             'creditor_id' => [
                 'required',
                 'integer',
-                'exist:users,id',
+                'exists:users,id',
                 function ($attribute, $value, $fail) {
                     if ((int) $value === Auth::id()) {
                         $fail('You cannot make a payment to yourself');
