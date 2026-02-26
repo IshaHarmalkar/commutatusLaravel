@@ -8,6 +8,11 @@ const routes = [
 
       { path: 'expenses', name: 'expenses', component: () => import('pages/ExpensePage.vue') },
 
+      {
+        path: 'expenses/:id',
+        name: 'expense-detail',
+        component: () => import('pages/ExpenseDetailPage.vue'),
+      },
       { path: 'add', name: 'add', component: () => import('pages/AddExpensePage.vue') },
     ],
   },
