@@ -11,6 +11,7 @@ class Payment extends Model
         'debtor_id',
         'creditor_id',
         'amount',
+        'notes',
     ];
 
     protected $casts = [
