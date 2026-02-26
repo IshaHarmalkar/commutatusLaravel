@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ExpenseResource;
+use App\Models\Expense;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class UserController extends Controller
+{
+    // for adding participants for expenses
+    public function search(Request $request): JsonResponse
+    {
+        $request->validate([
+            'q' => 'required|string|min:2|max:100',
+        ]);
+
+        $users = User::where('id', '!=', Auth::id())
+            ->where(function ($query) use ($request) {
+                $query->where('name', 'like', '%'.$request->q.'%')
+                    ->orWhere('email', 'like', '%'.$request->q.'%');
+            })->select('id', 'name', 'email')->limit(10)->get();
+
+        return response()->json([
+            'data' => $users,
+        ]);
+    }
+
+    // expenses per user
+    public function expenses(User $user): JsonResponse
+    {
+
+        $hasSharedExpense = Expense::where(function ($query) {
+            $query->where('paid_by_id', Auth::id())
+                ->orWhereHas('participants', function ($q) {
+                    $q->where('user_id', Auth::id());
+                });
+        })->where(function ($query) use ($user) {
+            $query->where('paid_by_id', $user->id)->orWhereHas('participants',
+                function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                });
+        })->exists();
+
+        if (! $hasSharedExpense) {
+            return response()->json([
+                'message' => 'You do not have access to this user\'s expenses',
+            ], 403);
+        }
+
+        // get all expense this friend was involved in
+        $expenses = Expense::where('paid_by_id', $user->id)
+            ->orWhereHas('participants', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->with([
+                          'paidBy',
+                          'participants.user',
+                          'items.splits.creditor',
+                          'items.splits.debtor',
+                      ])->latest()->paginate(15);
+
+        return response()->json([
+            'friend' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'data' => ExpenseResource::collection($expenses->items()),
+            'meta' => [
+                'current_page' => $expenses->currentPage(),
+                'last_page' => $expenses->lastPage(),
+                'per_page' => $expenses->perPage(),
+                'total' => $expenses->total(),
+            ],
+        ]);
+
+    }
+}
