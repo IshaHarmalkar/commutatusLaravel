@@ -46,7 +46,7 @@ class BalanceController extends Controller
             ->get()->keyBy('id');
 
         // net per friend
-        $owedTOYouList = [];
+        $owedToYouList = [];
         $youOweList = [];
 
         foreach ($friendIds as $friendId) {
