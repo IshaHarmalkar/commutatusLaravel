@@ -19,7 +19,7 @@
 <script>
 import { useAuthStore } from 'src/stores/auth'
 
-export default defineComponent({
+export default {
   name: 'MainLayout',
 
   methods: {
@@ -29,5 +29,5 @@ export default defineComponent({
       this.$router.push('/login')
     },
   },
-})
+}
 </script>

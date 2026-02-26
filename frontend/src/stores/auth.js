@@ -3,7 +3,8 @@ import { api } from 'src/boot/axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: Json.parse(localStorage.getItem('user')) || null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    initialized: false,
   }),
 
   getters: {
@@ -26,6 +27,7 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       await api.post('/logout')
       this.user = null
+      this.initialized = false
       localStorage.removeItem('user')
     },
 
@@ -37,6 +39,7 @@ export const useAuthStore = defineStore('auth', {
 
     async init() {
       //refresh -> refech the user if cookie still valid
+      if (this.initialized) return
       if (this.user) {
         try {
           await this.fetchUser()
@@ -46,6 +49,7 @@ export const useAuthStore = defineStore('auth', {
           localStorage.removeItem('user')
         }
       }
+      this.initialized = true
     },
   },
 })
