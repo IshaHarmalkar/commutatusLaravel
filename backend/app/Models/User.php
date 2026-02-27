@@ -60,7 +60,7 @@ class User extends Authenticatable
 
     public function creditorSplits(): HasMany
     {
-        return $this->hasMany(ExpennseItemSplit::class, 'creditor_id');
+        return $this->hasMany(ExpenseItemSplit::class, 'creditor_id');
     }
 
     // payments paid

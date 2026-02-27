@@ -45,4 +45,9 @@ class Expense extends Model
             ExpenseItem::class
         );
     }
+
+    public function participantSplits()
+    {
+        return $this->hasMany(ExpenseParticipantSplit::class);
+    }
 }

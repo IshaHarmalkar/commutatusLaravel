@@ -21,7 +21,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::get('/payments', [PaymentController::class, 'index']);
 
-
     Route::get('/users/{user}/expenses', [UserController::class, 'expenses']);
 
 });

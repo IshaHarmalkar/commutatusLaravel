@@ -45,10 +45,10 @@ class PaymentController extends Controller
 
         }
 
-    /*     // Floating point comparison buffer (0.01) to prevent "You owe 116.670000001" errors
-    if ($amount > ($net + 0.01)) {
-        return response()->json(['message' => 'You are overpaying. You only owe ' . round($net, 2) . '.'], 422);
-    }
+        /*     // Floating point comparison buffer (0.01) to prevent "You owe 116.670000001" errors
+        if ($amount > ($net + 0.01)) {
+            return response()->json(['message' => 'You are overpaying. You only owe ' . round($net, 2) . '.'], 422);
+        }
  */
         if ($amount > $net) {
             return response()->json([
