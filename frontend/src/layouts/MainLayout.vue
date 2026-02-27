@@ -56,13 +56,13 @@ export default {
         .toUpperCase()
         .slice(0, 2)
     },
+  },
 
-    methods: {
-      async logout() {
-        const auth = useAuthStore()
-        await auth.logout()
-        this.$router.push('/login')
-      },
+  methods: {
+    async logout() {
+      const auth = useAuthStore()
+      await auth.logout()
+      this.$router.push('/login')
     },
   },
 }
