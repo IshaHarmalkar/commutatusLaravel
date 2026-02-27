@@ -9,54 +9,63 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\ExpenseParticipantSplit;
 
 class BalanceController extends Controller
 {
     public function index(): JsonResponse
     {
         Log::info('BalanceController@index was hit by User: '.Auth::id());
-        $me = Auth::id();
+        $user = Auth::id();
 
         // per friend -> how much friend owes
-        $creditorSplits = ExpenseItemSplit::where('creditor_id', $me)
-            ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
-            ->groupBy('debtor_id')
-            ->pluck('total', 'friend_id');
+        $creditorSplits = ExpenseParticipantSplit::where('creditor_id', $user)
+                          ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
+                          ->groupBy('debtor_id')
+                          ->pluck('total', 'friend_id');
 
-        $debtorSplits = ExpenseItemSplit::where('debtor_id', $me)
-            ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
-            ->groupBy('creditor_id')
-            ->pluck('total', 'friend_id');
+
+
+        $debtorSplits = ExpenseParticipantSplit::where('debtor_id', $user)
+                        ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
+                        ->groupBy('creditor_id')
+                        ->pluck('total', 'friend_id');
 
         // payments made
-        $sentPayments = Payment::where('debtor_id', $me)
-            ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
-            ->groupBy('creditor_id')
-            ->pluck('total', 'friend_id');
+        $sentPayments = Payment::where('debtor_id', $user)
+                        ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
+                        ->groupBy('creditor_id')
+                        ->pluck('total', 'friend_id');
 
-        $receivedPayments = Payment::where('creditor_id', $me)
+        $receivedPayments = Payment::where('creditor_id', $user)
             ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
             ->groupBy('debtor_id')
             ->pluck('total', 'friend_id');
 
         // unique friends across queries
-        $friendIds = collect()->merge($creditorSplits->keys())->merge($debtorSplits->keys())->unique()->values();
+        $friendIds = collect()->merge($creditorSplits->keys())
+                              ->merge($debtorSplits->keys())
+                              ->merge($sentPayments->keys())
+                              ->merge($receivedPayments->keys())
+                              ->unique()->values();
 
         $friends = User::whereIn('id', $friendIds)
             ->get()->keyBy('id');
 
         // net per friend
-        $owedToYouList = [];
-        $youOweList = [];
+        $owedToUserList = [];
+        $userOweList = [];
 
         foreach ($friendIds as $friendId) {
-            $theyOweMe = (float) ($creditorSplits[$friendId] ?? 0);
-            $iOweThem = (float) ($debtorSplits[$friendId] ?? 0);
-            $iHavePaid = (float) ($sentPayments[$friendId] ?? 0);
-            $theyHavePaid = (float) ($receivedPayments[$friendId] ?? 0);
+            $friendOwesUser = (float) ($creditorSplits[$friendId] ?? 0);
+            $userOwesFriend = (float) ($debtorSplits[$friendId] ?? 0);
+
+            //payments
+            $userPaidFriend = (float) ($sentPayments[$friendId] ?? 0);
+            $friendPaidUser = (float) ($receivedPayments[$friendId] ?? 0);
 
             // net > 0 means they owe me, net < 0 means I owe them
-            $net = ($theyOweMe - $theyHavePaid) - ($iOweThem - $iHavePaid);
+            $net = ($friendOwesUser - $friendPaidUser) - ($userOwesFriend - $userPaidFriend);
             $net = round($net, 2);
 
             // payments settled
@@ -73,23 +82,23 @@ class BalanceController extends Controller
             ];
 
             if ($net > 0) {
-                $owedToYouList[] = $friendData; // they owe you
+                $owedToUserList[] = $friendData; // friend owes user
             } else {
-                $youOweList[] = $friendData;    // you owe them
+                $userOweList[] = $friendData;    // user owes friend
             }
         }
 
-        $totalOwedToYou = round(collect($owedToYouList)->sum('amount'), 2);
-        $totalYouOwe = round(collect($youOweList)->sum('amount'), 2);
-        $totalBalance = round($totalOwedToYou - $totalYouOwe, 2);
+        $totalOwedToUser = round(collect($owedToUserList)->sum('amount'), 2);
+        $totalUserOwe = round(collect($userOweList)->sum('amount'), 2);
+        $totalBalance = round($totalOwedToUser - $totalUserOwe, 2);
 
         return response()->json([
             'data' => [
                 'total_balance' => $totalBalance,
-                'total_owed_to_you' => $totalOwedToYou,
-                'total_you_owe' => $totalYouOwe,
-                'owed_to_you' => $owedToYouList,
-                'you_owe' => $youOweList,
+                'total_owed_to_user' => $totalOwedToUser,
+                'total_user_owes' => $totalUserOwe,
+                'owed_to_user' => $owedToUserList,
+                'user_owes' => $userOweList,
             ],
         ]);
     }
