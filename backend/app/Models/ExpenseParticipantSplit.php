@@ -36,7 +36,7 @@ class ExpenseParticipantSplit extends Model
     public static function insertTotals(int $expenseId, int $payerId, array $debtMap): void
     {
         $records = collect($debtMap)
-            ->filter(fn ($amount, $userId) => $userId !== $payerId && $amount > 0)
+            ->filter(fn ($amount, $userId) => $userId != $payerId && $amount > 0)
             ->map(fn ($amount, $userId) => [
                 'expense_id' => $expenseId,
                 'creditor_id' => $payerId,

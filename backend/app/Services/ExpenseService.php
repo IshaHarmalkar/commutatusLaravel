@@ -23,14 +23,18 @@ class ExpenseService
                 'tip' => $data['tip'] ?? 0,
             ]);
 
-            $participantIds = collect($data['pparticipants_ids'])->push($payerId)->unique();
+            $participantIds = collect($data['participant_ids'])->push($payerId)->unique();
             $expense->syncParticipants($participantIds->toArray());
 
-            $debtMap = $participantIds->fillKeys(0)->toArray();
+           // $debtMap = $participantIds->fillKeys(0)->toArray();
+            $debtMap = array_fill_keys($participantIds->toArray(), 0);
+
             $itemizedSplits = [];
             $count = $participantIds->count();
 
-            $extra = (float) ($data['tax' ?? 0]) + (float) ($data['tip'] ?? 0);
+
+            //not adding the tax + tip / n inndividauls share to db, for now
+            $extra = (float) ($data['tax'] ?? 0) + (float) ($data['tip'] ?? 0);
             if ($extra > 0) {
                 $extraShare = $extra / $count;
                 foreach ($debtMap as $userId => $currentTotal) {
@@ -45,7 +49,7 @@ class ExpenseService
                     'name' => $itemData['name'],
                     'amount' => $itemData['amount'],
                     'type' => $itemData['type'],
-                    'assigned_to_id' => $itemData['assignned_to_id'] ?? null,
+                    'assigned_to_id' => $itemData['assigned_to_id'] ?? null,
                 ]);
 
                 if ($itemData['type'] === 'assigned') {
