@@ -50,4 +50,11 @@ class Expense extends Model
     {
         return $this->hasMany(ExpenseParticipantSplit::class);
     }
+
+    // create the participant list for the expense
+    public function syncParticipants(array $ids): void
+    {
+        $formatted = collect($ids)->map(fn ($id) => ['user_id' => $id])->toArray();
+        $this->participants()->createMany($formatted);
+    }
 }

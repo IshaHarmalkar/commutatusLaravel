@@ -32,4 +32,20 @@ class ExpenseParticipantSplit extends Model
     {
         return $this->belongsTo(User::class, 'debtor_id');
     }
+
+    public static function insertTotals(int $expenseId, int $payerId, array $debtMap): void
+    {
+        $records = collect($debtMap)
+            ->filter(fn ($amount, $userId) => $userId !== $payerId && $amount > 0)
+            ->map(fn ($amount, $userId) => [
+                'expense_id' => $expenseId,
+                'creditor_id' => $payerId,
+                'debtor_id' => $userId,
+                'amount' => round($amount, 2),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ])->values()->toArray();
+
+        static::insert($records);
+    }
 }
