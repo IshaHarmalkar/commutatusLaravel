@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaymentRequest;
 use App\Models\ExpenseItemSplit;
+use App\Models\ExpenseParticipantSplit;
+
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -14,25 +16,25 @@ class PaymentController extends Controller
 {
     public function store(StorePaymentRequest $request): JsonResponse
     {
-        $me = Auth::id();
+        $user = Auth::id();
         $toUserId = (int) $request->creditor_id;
         $amount = (float) $request->amount;
 
         // what user owes
-        $oweFromSplits = (float) ExpenseItemSplit::where('creditor_id', $toUserId)
-            ->where('debtor_id', $me)
+        $oweFromSplits = (float) ExpenseParticipantSplit::where('creditor_id', $toUserId)
+            ->where('debtor_id', $user)
             ->sum('amount');
 
-        $friendOweFromSplits = (float) ExpenseItemSplit::where('creditor_id', $me)
+        $friendOweFromSplits = (float) ExpenseParticipantSplit::where('creditor_id', $user)
             ->where('debtor_id', $toUserId)
             ->sum('amount');
 
-        $alreadyPaid = (float) Payment::where('debtor_id', $me)
+        $alreadyPaid = (float) Payment::where('debtor_id', $user)
             ->where('creditor_id', $toUserId)
             ->sum('amount');
 
         $friendAlreadyPaid = (float) Payment::where('debtor_id', $toUserId)
-            ->where('creditor_id', $me)
+            ->where('creditor_id', $user)
             ->sum('amount');
 
         $net = ($oweFromSplits - $alreadyPaid) - ($friendOweFromSplits - $friendAlreadyPaid);
@@ -45,11 +47,7 @@ class PaymentController extends Controller
 
         }
 
-        /*     // Floating point comparison buffer (0.01) to prevent "You owe 116.670000001" errors
-        if ($amount > ($net + 0.01)) {
-            return response()->json(['message' => 'You are overpaying. You only owe ' . round($net, 2) . '.'], 422);
-        }
- */
+      
         if ($amount > $net) {
             return response()->json([
                 'message' => 'You are overpaying. You only owe '.round($net, 2).'.',
@@ -58,7 +56,7 @@ class PaymentController extends Controller
         }
 
         $payment = Payment::create([
-            'debtor_id' => $me,
+            'debtor_id' => $user,
             'creditor_id' => $toUserId,
             'amount' => $amount,
             'notes' => $request->input('notes'),
@@ -70,7 +68,7 @@ class PaymentController extends Controller
             'message' => 'Payment recorded successfully.',
             'data' => [
                 'id' => $payment->id,
-                'from' => ['id' => $me, 'name' => Auth::user()->name],
+                'from' => ['id' => $user, 'name' => Auth::user()->name],
                 'to' => ['id' => $toUserId, 'name' => $toUser->name],
                 'amount' => $payment->amount,
                 'notes' => $payment->notes,
@@ -87,10 +85,10 @@ class PaymentController extends Controller
 
     public function index(): JsonResponse
     {
-        $me = AUth::id();
+        $user = AUth::id();
 
-        $payments = Payment::where('debtor_id', $me)
-            ->orWhere('creditor_id', $me)
+        $payments = Payment::where('debtor_id', $user)
+            ->orWhere('creditor_id', $user)
             ->with('fromUser', 'toUser')
             ->latest()
             ->paginate(15);
@@ -101,7 +99,7 @@ class PaymentController extends Controller
             'to' => ['id' => $payment->toUser->id, 'name' => $payment->toUser->name],
             'amount' => $payment->amount,
             'notes' => $payment->notes,
-            'direction' => $payment->from_user_id === $me ? 'sent' : 'received',
+            'direction' => $payment->from_user_id === $user ? 'sent' : 'received',
             'created_at' => $payment->created_at->toDateTimeString(),
         ]);
 
