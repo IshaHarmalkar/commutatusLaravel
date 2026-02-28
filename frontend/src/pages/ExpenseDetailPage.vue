@@ -60,51 +60,45 @@
       <!-- Items -->
       <div class="text-subtitle2 q-mb-sm">Items</div>
       <q-list bordered separator class="rounded-borders q-mb-lg">
-        <q-expansion-item
-          v-for="item in expenseItems"
-          :key="item.id"
-          :label="item.name"
-          :caption="
-            item.type === 'assigned' ? `Assigned to ${item.assigned_to.name}` : 'Split equally'
-          "
-        >
+        <q-expansion-item v-for="item in expenseItems" :key="item.id">
           <template #header>
             <q-item-section>
               <q-item-label>{{ item.name }}</q-item-label>
-              <q-item-label caption>
-                {{
-                  item.type === 'assigned'
-                    ? `Assigned to ${item.assigned_to.name}`
-                    : 'Split equally'
-                }}
-              </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-item-label class="text-weight-medium">
-                {{ formatAmount(item.amount) }}
-              </q-item-label>
+              {{ formatAmount(item.total_amount) }}
             </q-item-section>
           </template>
 
           <!-- Splits for this item -->
           <q-list dense class="bg-grey-1">
-            <q-item v-for="split in item.splits" :key="split.id">
+            <q-item v-for="(amount, name) in item.shares" :key="name">
               <q-item-section>
-                <q-item-label class="text-caption">
-                  {{ split.debtor.name }} owes {{ split.creditor.name }}
-                </q-item-label>
+                {{ name }}
               </q-item-section>
-              <q-item-section side>
-                <q-item-label class="text-caption text-negative">
-                  {{ formatAmount(split.amount) }}
-                </q-item-label>
-              </q-item-section>
+              <q-item-section side> {{ formatAmount(amount) }} </q-item-section>
             </q-item>
-            <q-item v-if="!item.splits.length">
-              <q-item-section>
-                <q-item-label class="text-caption text-grey">
-                  No splits — assigned to payer
-                </q-item-label>
+          </q-list>
+        </q-expansion-item>
+        <q-expansion-item
+          v-if="Number(expense.tax) > 0 || Number(expense.tip) > 0"
+          icon="Receipt"
+          header-class="text-grey-8"
+        >
+          <template #header>
+            <q-item-section>
+              <q-item-label>Tax & Tip</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              {{ formatAmount(Number(expense.tax) + Number(expense.tip)) }}
+            </q-item-section>
+          </template>
+
+          <q-list dense class="bg-grey-1">
+            <q-item v-for="(amount, name) in tax_tip_breakdown" :key="name">
+              <q-item-section class="text-caption">{{ name }}</q-item-section>
+              <q-item-section side class="text-caption">
+                {{ formatAmount(amount) }}
               </q-item-section>
             </q-item>
           </q-list>
@@ -144,6 +138,7 @@
 
 <script>
 import { api } from 'src/boot/axios'
+import { useAuthStore } from 'src/stores/auth'
 
 export default {
   name: 'ExpenseDetailPage',
@@ -157,6 +152,7 @@ export default {
         net: 0,
       },
       loading: true,
+      currentUserId: useAuthStore().user?.id,
     }
   },
 
@@ -169,7 +165,7 @@ export default {
 
     subtotal() {
       if (!this.expense) return 0
-      return this.expenseItems.reduce((sum, i) => sum + Number(i.amount), 0)
+      return this.expenseItems.reduce((sum, i) => sum + Number(i.total_amount), 0)
     },
   },
 
@@ -184,6 +180,7 @@ export default {
         const res = await api.get(`/api/expenses/${this.$route.params.id}`)
         this.expense = res.data.data.expense
         this.summary = res.data.data.your_summary
+        this.tax_tip_breakdown = res.data.data.tax_tip_breakdown
       } catch {
         this.expense = null
       } finally {
@@ -194,7 +191,7 @@ export default {
     formatAmount(val) {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'INR',
       }).format(val ?? 0)
     },
 
