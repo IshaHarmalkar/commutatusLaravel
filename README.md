@@ -7,8 +7,9 @@
 - PHP >= 8.2
 - Composer
 - MySQL / MariaDB
-- Node.js & NPM (optional – if frontend assets exist)
+- Node.js
 - Laravel >= 10
+- Quasar Vue
 - Git
 
 ---
