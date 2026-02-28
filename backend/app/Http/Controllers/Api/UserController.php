@@ -34,18 +34,11 @@ class UserController extends Controller
     // expenses per user
     public function expenses(User $user): JsonResponse
     {
+        $currentUserId = Auth::id();
 
-        $hasSharedExpense = Expense::where(function ($query) {
-            $query->where('paid_by_id', Auth::id())
-                ->orWhereHas('participants', function ($q) {
-                    $q->where('user_id', Auth::id());
-                });
-        })->where(function ($query) use ($user) {
-            $query->where('paid_by_id', $user->id)->orWhereHas('participants',
-                function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
-                });
-        })->exists();
+        $hasSharedExpense = Expense::involvingUser($currentUserId)
+            ->involvingUser($user->id)
+            ->exists();
 
         if (! $hasSharedExpense) {
             return response()->json([
@@ -54,10 +47,8 @@ class UserController extends Controller
         }
 
         // get all expense this friend was involved in
-        $expenses = Expense::where('paid_by_id', $user->id)
-            ->orWhereHas('participants', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->with([
+        $expenses = Expense::involvingUser($user->id)
+            ->with([
                 'paidBy',
                 'participants.user',
                 'items.splits.creditor',
