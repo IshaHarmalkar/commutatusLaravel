@@ -17,14 +17,14 @@
       <q-card flat bordered class="col">
         <q-card-section>
           <div class="text-caption text-grey">Owed To You</div>
-          <div class="text-h5 text-positive">{{ formatAmount(balance.total_owed_to_you) }}</div>
+          <div class="text-h5 text-positive">{{ formatAmount(balance.total_owed_to_user) }}</div>
         </q-card-section>
       </q-card>
 
       <q-card flat bordered class="col">
         <q-card-section>
           <div class="text-caption text-grey">You Owe</div>
-          <div class="text-h5 text-negative">{{ formatAmount(balance.total_you_owe) }}</div>
+          <div class="text-h5 text-negative">{{ formatAmount(balance.total_user_owes) }}</div>
         </q-card-section>
       </q-card>
     </div>
@@ -32,11 +32,11 @@
     <!--  friends who owe me-->
     <div class="text-subtitle1 q-mb-sm">Owed To You</div>
     <q-list bordered separator class="q-mb-lg rounded-borders">
-      <q-item v-if="balance.owed_to_you.length === 0">
+      <q-item v-if="balance.owed_to_user.length === 0">
         <q-item-section class="text-grey">Nobody owes you anything</q-item-section>
       </q-item>
 
-      <q-item v-for="entry in balance.owed_to_you" :key="entry.user.id">
+      <q-item v-for="entry in balance.owed_to_user" :key="entry.user.id">
         <q-item-section>
           {{ entry.user.name }}
         </q-item-section>
@@ -49,11 +49,11 @@
     <!--  friends  I owe-->
     <div class="text-subtitle1 q-mb-sm">You Owe</div>
     <q-list bordered separator class="q-mb-lg rounded-borders">
-      <q-item v-if="balance.you_owe.length === 0">
+      <q-item v-if="balance.user_owes.length === 0">
         <q-item-section class="text-grey">You don't owe anyone</q-item-section>
       </q-item>
 
-      <q-item v-for="entry in balance.you_owe" :key="entry.user.id">
+      <q-item v-for="entry in balance.user_owes" :key="entry.user.id">
         <q-item-section>
           {{ entry.user.name }}
         </q-item-section>
@@ -125,10 +125,10 @@ export default {
     return {
       balance: {
         total_balance: 0,
-        total_owed_to_you: 0,
-        total_you_owe: 0,
-        owed_to_you: [],
-        you_owe: [],
+        total_owed_to_user: 0,
+        total_user_owes: 0,
+        owed_to_user: [],
+        user_owes: [],
       },
       dialog: {
         open: false,

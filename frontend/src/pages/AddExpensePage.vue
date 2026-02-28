@@ -16,6 +16,7 @@
       outlined
       dense
       use-input
+      input-debounce="300"
       class="q-mb-sm"
       @filter="searchUsers"
     />
@@ -109,11 +110,31 @@ export default {
     },
 
     assignableUsers() {
-      return this.userOptions.filter((u) => this.form.participant_ids.includes(u.id))
+      const auth = useAuthStore()
+      const participants = this.userOptions.filter((u) => this.form.participant_ids.includes(u.id))
+
+      const combined = [auth.user, ...participants]
+      return Array.from(
+        new Map(
+          combined.map((u) => [
+            u.id,
+            { ...u, name: u.id === auth.user.id ? 'Me (' + u.name + ')' : u.name },
+          ]),
+        ).values(),
+      )
     },
   },
 
   methods: {
+    async loadInitialUsers() {
+      try {
+        const res = await api.get('/api/users/search')
+        this.userOptions = res.data.data
+      } catch (e) {
+        console.error('Failed to load users', e)
+      }
+    },
+
     addItem() {
       this.form.items.push({ name: '', amount: null, type: 'equal', assigned_to_id: null })
     },
@@ -122,9 +143,16 @@ export default {
       this.form.items.splice(index, 1)
     },
 
-    async searchUsers(val, update) {
+    async searchUsers(val, update, abort) {
+      if (val === '') {
+        update(async () => {
+          await this.loadInitialUsers()
+        })
+        return
+      }
+
       if (val.length < 2) {
-        update(() => {})
+        abort()
         return
       }
       try {
@@ -142,20 +170,19 @@ export default {
             this.form.participant_ids.includes(u.id),
           )
 
-          // Use a Map or Set to ensure you don't have duplicate Bob's
-          this.userOptions = [
-            ...new Map([...currentlySelected, ...searchedUsers].map((u) => [u.id, u])).values(),
-          ]
+          const allAvailable = [...currentlySelected, ...searchedUsers]
+
+          this.userOptions = Array.from(new Map(allAvailable.map((u) => [u.id, u])).values())
         })
       } catch {
-        update(() => {})
+        abort()
       }
     },
 
     formatAmount(val) {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'INR',
       }).format(val ?? 0)
     },
 
