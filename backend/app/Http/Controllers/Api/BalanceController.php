@@ -17,15 +17,10 @@ class BalanceController extends Controller
         Log::info('BalanceController@index was hit by User: '.Auth::id());
         $user = Auth::id();
 
-        // per friend -> how much friend owes
-        $creditorSplits = ExpenseParticipantSplit::where('creditor_id', $user)
-            ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
-            ->groupBy('debtor_id')
+        $creditorSplits = ExpenseParticipantSplit::summarizeByFriend('creditor', $user)
             ->pluck('total', 'friend_id');
 
-        $debtorSplits = ExpenseParticipantSplit::where('debtor_id', $user)
-            ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
-            ->groupBy('creditor_id')
+        $debtorSplits = ExpenseParticipantSplit::summarizeByFriend('debtor', $user)
             ->pluck('total', 'friend_id');
 
         // payments made

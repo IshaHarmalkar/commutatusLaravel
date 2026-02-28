@@ -44,16 +44,13 @@ class ExpenseController extends Controller
 
         // get expenses where the user is creditor or a participant.
         // expenses where the user was involved
-        $expenses = Expense::query()
-            ->where('paid_by_id', Auth::id())
-            ->orWhereHas('participants', function ($query) {
-                $query->where('user_id', Auth::id());
-            })->with([
-                'paidBy',
+
+        $expenses = Expense::involvingUser(Auth::id())
+            ->with(['paidBy',
                 'participants.user',
                 'items.splits.creditor',
-                'items.splits.debtor',
-            ])->latest()->paginate(15);
+                'items.splits.debtor', ])
+            ->latest()->paginate(15);
 
         return response()->json([
             'data' => ExpenseResource::collection($expenses->items()),
@@ -102,16 +99,14 @@ class ExpenseController extends Controller
 
     private function calculateSummary(Expense $expense, int $userId, float $myTaxTipShare): array
     {
-  
+
         $allSplits = $expense->items->flatMap->splits;
 
-     
         $youOweItems = $allSplits
             ->where('debtor_id', $userId)
             ->where('creditor_id', '!=', $userId)
             ->sum('amount');
 
-     
         $owedToYouItems = $allSplits
             ->where('creditor_id', $userId)
             ->where('debtor_id', '!=', $userId)

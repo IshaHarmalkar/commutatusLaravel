@@ -28,4 +28,11 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class, 'creditor_id');
     }
+
+    // where user is either debtor or creditor
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('debtor_id', $userId)
+            ->orWhere('creditor_id', $userId);
+    }
 }

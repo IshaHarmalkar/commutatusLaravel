@@ -14,10 +14,12 @@ class Participant extends Model
 
     public function expense(): BelongsTo
     {
-        return $this->belongs(Expense::class);
+
+        // was belongs
+        return $this->belongsTo(Expense::class);
     }
 
-    public function User(): BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

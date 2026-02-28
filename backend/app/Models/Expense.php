@@ -57,4 +57,21 @@ class Expense extends Model
         $formatted = collect($ids)->map(fn ($id) => ['user_id' => $id])->toArray();
         $this->participants()->createMany($formatted);
     }
+
+    // scopes
+
+    // get expenses where user is involved
+    public function scopeInvolvingUser($query, $userId)
+    {
+        return $query->where('paid_by_id', $userId)
+            ->orWhereHas('participants', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            });
+    }
+
+    public function scopeSharedBetween($query, $userA, $userB)
+    {
+        return $query->where(fn ($q) => $q->forUser($userA))
+            ->where(fn ($q) => $q->forUser($userB));
+    }
 }

@@ -48,4 +48,14 @@ class ExpenseParticipantSplit extends Model
 
         static::insert($records);
     }
+
+    public function scopeSummarizeByFriend($query, string $role, int $userId)
+    {
+        $friendColumn = ($role === 'creditor') ? 'debtor_id' : 'creditor_id';
+        $userColumn = ($role === 'creditor') ? 'creditor_id' : 'debtor_id';
+
+        return $query->where($userColumn, $userId)
+            ->selectRaw("$friendColumn as friend_id, SUM(amount) as total")
+            ->groupBy($friendColumn);
+    }
 }
