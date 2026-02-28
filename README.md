@@ -14,14 +14,46 @@
 
 ---
 
+## Link: https://depapp.ishaharmalkar.com
+
+--
+
 ## Assumptions Made
 
 - All users are friends to each other.
+- The person who adds the expense i.e the person paying for it / creditor is added as a participant to the expense.
+- Payments allowed <= owed to the creditor.
 
 ## Terms
 
 -- Creditor is the person 1. who paid for the expense and in payments who the payment is being made to i.e sent_to.
 -- Debtor are all participants who were involved in the expense - the creditor. In payment model it is the debtor, the person who makes the payment
+
+## Screenshots
+
+### Dashboard
+
+![Expense Dashboard](screenshots/dashboard.png)
+
+### Add Expense
+
+![Add Expense](screenshots/add_expense.png)
+
+### Expenses
+
+![Expenses](screenshots/expense.png)
+
+### Expense Details
+
+![Expense Detail](screenshots/expense_detail.png)
+
+### Payment
+
+![Payment](screenshots/pay.png)
+
+### Add Expense
+
+### Pay
 
 ## Api Endpoints
 

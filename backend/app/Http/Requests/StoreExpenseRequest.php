@@ -78,7 +78,7 @@ class StoreExpenseRequest extends FormRequest
 
     private function validateAssignedUsersAreParticipants($validator): void
     {
-        $validIds = $this->input('participant_ids, []');
+        $validIds = $this->input('participant_ids', []);
         $validIds[] = Auth::id();
 
         foreach ($this->input('items', []) as $index => $item) {
