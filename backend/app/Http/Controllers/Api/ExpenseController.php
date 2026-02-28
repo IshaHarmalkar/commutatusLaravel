@@ -102,32 +102,28 @@ class ExpenseController extends Controller
 
     private function calculateSummary(Expense $expense, int $userId, float $myTaxTipShare): array
     {
-        // 1. Get all individual item splits for this user
+  
         $allSplits = $expense->items->flatMap->splits;
 
-        // 2. Amount you owe to the person who paid (the Creditor)
-        // We exclude splits where you are the creditor (i.e., you paid for yourself)
+     
         $youOweItems = $allSplits
             ->where('debtor_id', $userId)
             ->where('creditor_id', '!=', $userId)
             ->sum('amount');
 
-        // 3. Amount others owe to you (only if YOU were the one who paid the bill)
+     
         $owedToYouItems = $allSplits
             ->where('creditor_id', $userId)
             ->where('debtor_id', '!=', $userId)
             ->sum('amount');
 
-        // 4. Add the Tax/Tip share
-        // If you are NOT the payer, you owe your tax share to the payer.
-        // If you ARE the payer, others owe their tax shares to you.
         $finalYouOwe = (float) $youOweItems;
         $finalOwedToYou = (float) $owedToYouItems;
 
         if ($expense->paid_by_id !== $userId) {
             $finalYouOwe += $myTaxTipShare;
         } else {
-            // If you paid, the "Tax & Tip" owed to you is the total minus your own share
+
             $othersTaxTip = ((float) $expense->tax + (float) $expense->tip) - $myTaxTipShare;
             $finalOwedToYou += $othersTaxTip;
         }
