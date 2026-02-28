@@ -15,19 +15,20 @@ class UserController extends Controller
     // for adding participants for expenses
     public function search(Request $request): JsonResponse
     {
-        $request->validate([
-            'q' => 'required|string|min:2|max:100',
-        ]);
+        $query = User::where('id', '!=', Auth::id())
+            ->select('id', 'name', 'email');
 
-        $users = User::where('id', '!=', Auth::id())
-            ->where(function ($query) use ($request) {
-                $query->where('name', 'like', '%'.$request->q.'%')
-                    ->orWhere('email', 'like', '%'.$request->q.'%');
-            })->select('id', 'name', 'email')->limit(10)->get();
+        if ($request->filled('q')) {
+            $searchTerm = '%'.$request->q.'%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', $searchTerm)
+                    ->orWhere('email', 'like', $searchTerm);
+            });
+        }
 
-        return response()->json([
-            'data' => $users,
-        ]);
+        $users = $query->limit(15)->get();
+
+        return response()->json(['data' => $users]);
     }
 
     // expenses per user
@@ -57,11 +58,11 @@ class UserController extends Controller
             ->orWhereHas('participants', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })->with([
-                          'paidBy',
-                          'participants.user',
-                          'items.splits.creditor',
-                          'items.splits.debtor',
-                      ])->latest()->paginate(15);
+                'paidBy',
+                'participants.user',
+                'items.splits.creditor',
+                'items.splits.debtor',
+            ])->latest()->paginate(15);
 
         return response()->json([
             'friend' => [

@@ -26,14 +26,13 @@ class ExpenseService
             $participantIds = collect($data['participant_ids'])->push($payerId)->unique();
             $expense->syncParticipants($participantIds->toArray());
 
-           // $debtMap = $participantIds->fillKeys(0)->toArray();
+            // $debtMap = $participantIds->fillKeys(0)->toArray();
             $debtMap = array_fill_keys($participantIds->toArray(), 0);
 
             $itemizedSplits = [];
             $count = $participantIds->count();
 
-
-            //not adding the tax + tip / n inndividauls share to db, for now
+            // not adding the tax + tip / n inndividauls share to db, for now
             $extra = (float) ($data['tax'] ?? 0) + (float) ($data['tip'] ?? 0);
             if ($extra > 0) {
                 $extraShare = $extra / $count;

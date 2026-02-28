@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class StoreExpenseRequest extends FormRequest
 {
@@ -77,17 +78,18 @@ class StoreExpenseRequest extends FormRequest
 
     private function validateAssignedUsersAreParticipants($validator): void
     {
-        $participantIds = $this->input('participant_ids', []);
+        $validIds = $this->input('participant_ids, []');
+        $validIds[] = Auth::id();
 
         foreach ($this->input('items', []) as $index => $item) {
             if (
                 ($item['type'] ?? '') === 'assigned' &&
                 isset($item['assigned_to_id']) &&
-                ! in_array($item['assigned_to_id'], $participantIds)
+                ! in_array($item['assigned_to_id'], $validIds)
             ) {
                 $validator->errors()->add(
                     "items.{$index}.assigned_to_id",
-                    'The assigned user must be one of participants.'
+                    'The assigned user must be one of participants or the person paying'
                 );
             }
 

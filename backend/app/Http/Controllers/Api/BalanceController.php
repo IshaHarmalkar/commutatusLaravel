@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExpenseItemSplit;
+use App\Models\ExpenseParticipantSplit;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Models\ExpenseParticipantSplit;
 
 class BalanceController extends Controller
 {
@@ -20,22 +19,20 @@ class BalanceController extends Controller
 
         // per friend -> how much friend owes
         $creditorSplits = ExpenseParticipantSplit::where('creditor_id', $user)
-                          ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
-                          ->groupBy('debtor_id')
-                          ->pluck('total', 'friend_id');
-
-
+            ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
+            ->groupBy('debtor_id')
+            ->pluck('total', 'friend_id');
 
         $debtorSplits = ExpenseParticipantSplit::where('debtor_id', $user)
-                        ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
-                        ->groupBy('creditor_id')
-                        ->pluck('total', 'friend_id');
+            ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
+            ->groupBy('creditor_id')
+            ->pluck('total', 'friend_id');
 
         // payments made
         $sentPayments = Payment::where('debtor_id', $user)
-                        ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
-                        ->groupBy('creditor_id')
-                        ->pluck('total', 'friend_id');
+            ->selectRaw('creditor_id as friend_id, SUM(amount) as total')
+            ->groupBy('creditor_id')
+            ->pluck('total', 'friend_id');
 
         $receivedPayments = Payment::where('creditor_id', $user)
             ->selectRaw('debtor_id as friend_id, SUM(amount) as total')
@@ -44,10 +41,10 @@ class BalanceController extends Controller
 
         // unique friends across queries
         $friendIds = collect()->merge($creditorSplits->keys())
-                              ->merge($debtorSplits->keys())
-                              ->merge($sentPayments->keys())
-                              ->merge($receivedPayments->keys())
-                              ->unique()->values();
+            ->merge($debtorSplits->keys())
+            ->merge($sentPayments->keys())
+            ->merge($receivedPayments->keys())
+            ->unique()->values();
 
         $friends = User::whereIn('id', $friendIds)
             ->get()->keyBy('id');
@@ -60,7 +57,7 @@ class BalanceController extends Controller
             $friendOwesUser = (float) ($creditorSplits[$friendId] ?? 0);
             $userOwesFriend = (float) ($debtorSplits[$friendId] ?? 0);
 
-            //payments
+            // payments
             $userPaidFriend = (float) ($sentPayments[$friendId] ?? 0);
             $friendPaidUser = (float) ($receivedPayments[$friendId] ?? 0);
 

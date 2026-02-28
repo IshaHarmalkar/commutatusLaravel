@@ -13,7 +13,8 @@ class ExpenseResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'amount' => $this->amount,
-            'tax' => $this->tip,
+            'tax' => $this->tax,
+            'tip' => $this->tip,
             'paid_by' => [
                 'id' => $this->paidBy->id,
                 'name' => $this->paidBy->name,
@@ -26,16 +27,10 @@ class ExpenseResource extends JsonResource
             'items' => $this->items->map(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
-                'amount' => $item->amount,
+                'total_amount' => (float) $item->amount,
                 'type' => $item->type,
-                'assigned_to' => $item->assignedTo ? [
-                    'id' => $item->assignedTo->name,
-                ] : null,
-                'splits' => $this->splits->map(fn ($split) => [
-                    'id' => $split->id,
-                    'creditor' => ['id' => $split->creditor->id, 'name' => $split->creditor->name],
-                    'debtor' => ['id' => $split->debtor->id, 'name' => $split->debtor->name],
-                    'amount' => $split->amount,
+                'shares' => $item->splits->mapWithKeys(fn ($split) => [
+                    $split->debtor->name => (float) $split->amount,
                 ]),
             ]),
             'created_at' => $this->created_at->toDateTimeString(),

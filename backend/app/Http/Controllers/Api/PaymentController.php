@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaymentRequest;
-use App\Models\ExpenseItemSplit;
 use App\Models\ExpenseParticipantSplit;
-
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -47,7 +45,6 @@ class PaymentController extends Controller
 
         }
 
-      
         if ($amount > $net) {
             return response()->json([
                 'message' => 'You are overpaying. You only owe '.round($net, 2).'.',
