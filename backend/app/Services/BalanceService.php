@@ -6,7 +6,7 @@ use App\Models\ExpenseParticipantSplit;
 use App\Models\Payment;
 use App\Models\User;
 
-class BlanceService
+class BalanceService
 {
     public function getBalanceSummary(int $userId): array
     {
@@ -37,6 +37,7 @@ class BlanceService
         ])->flatten()->unique()->values();
 
         $friends = User::whereIn('id', $friendIds)
+            ->select('id', 'name', 'email')
             ->get()->keyBy('id');
 
         // net per friend
@@ -44,6 +45,9 @@ class BlanceService
         $userOweList = [];
 
         foreach ($friendIds as $friendId) {
+            if (! $friends->has($friendId)) {
+                continue;
+            }
             $net = $this->calculateNet($friendId, $creditorSplits, $debtorSplits, $sentPayments, $receivedPayments);
 
             // net > 0 means they owe me, net < 0 means I owe them
@@ -91,7 +95,7 @@ class BlanceService
             'total_balance' => round($totalOwedToUser - $totalUserOwe, 2),
             'total_owed_to_user' => $totalOwedToUser,
             'total_user_owes' => $totalUserOwe,
-            'owed_to_use' => $owedToUser,
+            'owed_to_user' => $owedToUser,
             'user_owes' => $userOwes,
         ];
     }
