@@ -64,69 +64,25 @@ class ExpenseController extends Controller
 
     }
 
-    public function show(Expense $expense): JsonResponse
+    public function show(Expense $expense, ExpenseService $expenseService): JsonResponse
     {
         $userId = Auth::id();
-        $isMember = $expense->paid_by_id === $userId || $expense->participants()->where('user_id', $userId)->exists();
+        $isMember = Expense::involvingUser($userId)
+            ->where('id', $expense->id)
+            ->exists();
 
         if (! $isMember) {
             return response()->json(['message' => 'Access denied'], 403);
         }
 
-        $expense->load([
-            'paidBy',
-            'participants.user',
-            'items.splits.debtor',
-        ]);
-
-        $taxTipTotal = (float) $expense->tax + (float) $expense->tip;
-        $count = $expense->participants->count();
-        $taxTipShare = $count > 0 ? round($taxTipTotal / $count, 2) : 0;
-
-        $taxTipShares = $expense->participants->mapWithKeys(fn ($p) => [
-            $p->user->name => $taxTipShare,
-        ]);
+        $summaryData = $expenseService->getExpenseSummary($expense, $userId);
 
         return response()->json([
-            'data' => [
+            'data' => array_merge([
                 'expense' => new ExpenseResource($expense),
-                'tax_tip_breakdown' => $taxTipShares,
-                'your_summary' => $this->calculateSummary($expense, $userId, $taxTipShare),
-            ],
+
+            ], $summaryData),
         ]);
 
-    }
-
-    private function calculateSummary(Expense $expense, int $userId, float $myTaxTipShare): array
-    {
-
-        $allSplits = $expense->items->flatMap->splits;
-
-        $youOweItems = $allSplits
-            ->where('debtor_id', $userId)
-            ->where('creditor_id', '!=', $userId)
-            ->sum('amount');
-
-        $owedToYouItems = $allSplits
-            ->where('creditor_id', $userId)
-            ->where('debtor_id', '!=', $userId)
-            ->sum('amount');
-
-        $finalYouOwe = (float) $youOweItems;
-        $finalOwedToYou = (float) $owedToYouItems;
-
-        if ($expense->paid_by_id !== $userId) {
-            $finalYouOwe += $myTaxTipShare;
-        } else {
-
-            $othersTaxTip = ((float) $expense->tax + (float) $expense->tip) - $myTaxTipShare;
-            $finalOwedToYou += $othersTaxTip;
-        }
-
-        return [
-            'you_owe' => round($finalYouOwe, 2),
-            'owed_to_you' => round($finalOwedToYou, 2),
-            'net' => round($finalOwedToYou - $finalYouOwe, 2),
-        ];
     }
 }

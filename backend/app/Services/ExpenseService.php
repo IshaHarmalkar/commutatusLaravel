@@ -86,4 +86,50 @@ class ExpenseService
             'updated_at' => now(),
         ];
     }
+
+    public function getExpenseSummary(Expense $expense, int $userId): array
+    {
+
+        $expense->load(['participants.user', 'items.splits']);
+
+        $taxTipTotal = (float) $expense->tax + (float) $expense->tip;
+        $count = $expense->participants->count();
+        $taxTipShare = $count > 0 ? round($taxTipTotal / $count, 2) : 0;
+
+        $taxTipBreakdown = $expense->participants->mapWithKeys(fn ($p) => [
+            $p->user->name => $taxTipShare,
+        ]);
+
+        $allSplits = $expense->items->flatMap->splits;
+
+        $userOweItems = $allSplits
+            ->where('debtor_id', $userId)
+            ->where('creditor_id', '!=', $userId)
+            ->sum('amount');
+
+        $owedToUserItems = $allSplits
+            ->where('creditor_id', $userId)
+            ->where('debtor_id', '!=', $userId)
+            ->sum('amount');
+
+        $finalUserOwe = (float) $userOweItems;
+        $finalOwedToUser = (float) $owedToUserItems;
+
+        if ($expense->paid_by_id !== $userId) {
+            $finalUserOwe += $taxTipShare;
+        } else {
+            $othersTaxTip = $taxTipTotal - $taxTipShare;
+            $finalOwedToUser += $othersTaxTip;
+        }
+
+        return [
+            'tax_tip_breakdown' => $taxTipBreakdown,
+            'your_summary' => [
+                'you_owe' => round($finalUserOwe, 2),
+                'owed_to_you' => round($finalOwedToUser, 2),
+                'net' => round($finalOwedToUser - $finalUserOwe, 2),
+            ],
+        ];
+
+    }
 }

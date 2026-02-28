@@ -84,12 +84,6 @@ class PaymentController extends Controller
     {
         $user = AUth::id();
 
-        /*  $payments = Payment::where('debtor_id', $user)
-             ->orWhere('creditor_id', $user)
-             ->with('fromUser', 'toUser')
-             ->latest()
-             ->paginate(15); */
-
         $payments = Payment::forUser(Auth::id())
             ->with('fromUser', 'toUser')
             ->latest()
