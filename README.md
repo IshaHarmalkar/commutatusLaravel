@@ -51,9 +51,19 @@
 
 ![Payment](screenshots/pay.png)
 
-### Add Expense
+## Db and Flow
 
-### Pay
+### Detailed flow diagrams, refer to last 3 pages.
+
+[Flow Diagrams](https://mercury-ursinia-24a.notion.site/Flow-Diagrams-316766ba368280f5af21d2982ec3c1de?source=copy_link)
+
+### Database Desing
+
+![Db](screenshots/db.png)
+
+### Create Expense Flow
+
+![Create Expense](screenshots/create_expense_flow.png)
 
 ## Api Endpoints
 
