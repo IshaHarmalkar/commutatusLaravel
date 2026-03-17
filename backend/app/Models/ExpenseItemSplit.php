@@ -32,4 +32,9 @@ class ExpenseItemSplit extends Model
     {
         return $this->belongsTo(User::class, 'debtor_id');
     }
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseItem::class, 'expense_item_id');
+    }
 }

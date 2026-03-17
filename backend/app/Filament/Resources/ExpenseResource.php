@@ -4,7 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExpenseResource\Pages;
 use App\Models\Expense;
-use Filament\Forms;
+use App\Models\User;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -20,39 +23,30 @@ class ExpenseResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Core Information')
-                    ->description('Who paid and how much?')
+                TextInput::make('name')->required(),
+                TextInput::make('amount')->numeric()->required(),
+                TextInput::make('tax')->numeric()->default(0),
+
+                // participants
+                Select::make('participant_ids')->label('Participants')->multiple()
+                    ->options(User::pluck('name', 'id'))
+                    ->required(),
+
+                Repeater::make('items')
                     ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->placeholder('eg. Dinner at Mario'),
-
-                        // links to user model via paidby relation
-                        Forms\Components\Select::make('paid_by_id')
-                            ->relationship('paidBy', 'name')
-                            ->searchable()
-                            ->preload()
+                        TextInput::make('name')
                             ->required(),
-                    ])->columns(2),
+                        TextInput::make('amount')->numeric()->required(),
+                        Select::make('type')->options([
+                            'equal' => 'Equal',
+                            'assigned' => 'Assigned',
+                        ])->required()->reactive(),
 
-                Forms\Components\Section::make('Financial Breakdown')
-                    ->schema([
-                        Forms\Components\TextInput::make('amount')
-                            ->numeric()
-                            ->prefix('$')
-                            ->step(0.01)
-                            ->required(),
-                        Forms\Components\TextInput::make('tax')
-                            ->numeric()
-                            ->prefix('$')
-                            ->default(0)
-                            ->step(0.01),
-
-                        Forms\Components\TextInput::make('tip')
-                            ->numeric()
-                            ->default(0)
-                            ->step(0.01),
-                    ])->columns(3),
+                        Select::make('assigned_to_id')
+                            ->label('Assigned Too')
+                            ->options(User::pluck('name', 'id'))
+                            ->visible(fn ($get) => $get('type') === 'assigned'),
+                    ])->required()->minItems(1),
             ]);
     }
 

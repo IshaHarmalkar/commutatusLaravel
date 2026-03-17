@@ -132,4 +132,101 @@ class ExpenseService
         ];
 
     }
+
+    public function updateExpense(Expense $expense, array $data): Expense
+    {
+        return DB::transaction(function () use ($expense, $data) {
+
+            $payerId = $expense->paid_by_id;
+
+            $expense->update([
+                'name' => $data['name'],
+                'amount' => $data['amount'],
+                'tax' => $data['tax'] ?? 0,
+                'tip' => $data['tip'] ?? 0,
+            ]);
+
+            // delete old records
+            ExpenseItemSplit::whereHas('item', function ($q) use ($expense) {
+                $q->where('expense_id', $expense->id);
+            })->delete();
+
+            $expense->participantSplits()->delete();
+
+            $expense->items()->delete();
+
+            $expense->participants()->delete();
+
+            // Rebuild
+            $participantIds = collect($data['participant_ids'])
+                ->push($payerId)
+                ->unique();
+
+            $expense->syncParticipants($participantIds->toArray());
+
+            $debtMap = array_fill_keys($participantIds->toArray(), 0);
+            $itemizedSplits = [];
+            $count = $participantIds->count();
+
+            $extra = (float) ($data['tax'] ?? 0) + (float) ($data['tip'] ?? 0);
+
+            if ($extra > 0 && $count > 0) {
+                $extraShare = $extra / $count;
+                foreach ($debtMap as $userId => $currentTotal) {
+                    $debtMap[$userId] += $extraShare;
+                }
+
+            }
+
+            foreach ($data['items'] as $itemData) {
+                $item = $expense->items()->create([
+                    'name' => $itemData['name'],
+                    'amount' => $itemData['amount'],
+                    'type' => $itemData['type'],
+                    'assigned_to_id' => $itemData['assigned_to_id'] ?? null,
+                ]);
+
+                if ($itemData['type'] === 'assigned') {
+                    $assignedId = $itemData['assigned_to_id'];
+
+                    if (! $assignedId || ! isset($debtMap[$assignedId])) {
+                        throw new \Exception('Assigned user must be a valid participant');
+                    }
+
+                    $amount = (float) $itemData['amount'];
+
+                    $debtMap[$assignedId] += $amount;
+
+                    $itemizedSplits[] = $this->formatSplit(
+                        $item->id,
+                        $payerId,
+                        $assignedId,
+                        $amount,
+                    );
+                } else {
+                    $itemShare = (float) $itemData['amount'] / $count;
+
+                    foreach ($participantIds as $userId) {
+                        $debtMap[$userId] += $itemShare;
+                        $itemizedSplits[] = $this->formatSplit(
+                            $item->id,
+                            $payerId,
+                            $userId,
+                            $itemShare
+                        );
+                    }
+                }
+            }
+
+            ExpenseItemSplit::insert($itemizedSplits);
+            ExpenseParticipantSplit::insertTotals(
+                $expense->id,
+                $payerId,
+                $debtMap
+            );
+
+            return $expense->fresh(['participants.user', 'items.splits']);
+
+        });
+    }
 }
