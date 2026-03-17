@@ -26,29 +26,31 @@ class ExpenseParticipantSplitResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('id')
             ->columns([
-                Tables\Columns\TextColumn::make('expense.name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('creditor.name')
-                    ->description('Person who paid'),
                 Tables\Columns\TextColumn::make('debtor.name')
-                    ->description('Person who owes'),
+                    ->label('Who Owes'),
+                Tables\Columns\TextColumn::make('creditor.name')
+                    ->label('To Whom'),
                 Tables\Columns\TextColumn::make('amount')
                     ->money('INR')
-                    ->weight('bold')
-                    ->color(fn ($state) => $state > 0 ? 'success' : 'gray'),
+                    ->badge()
+                    ->color('success'),
 
             ])
+            ->headerActions([
+            ])
+
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+                /*  Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                ]), */
             ]);
     }
 

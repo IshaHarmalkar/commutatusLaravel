@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class ExpenseItemSplitResource extends Resource
 {
@@ -22,20 +23,39 @@ class ExpenseItemSplitResource extends Resource
             ->schema([
                 Forms\Components\Select::make('expense_item_id')
                     ->relationship('expenseItem', 'name')
-                    ->required()
-                    ->searchable(),
-                Forms\Components\Select::make('creditor_id')
+                    ->live()
+                    ->required(),
+                /* Forms\Components\Select::make('creditor_id')
                     ->relationship('creditor', 'name')
                     ->label('Person Owed')
                     ->required(),
                 Forms\Components\Select::make('debtor_id')
                     ->relationship('debtor', 'name')
                     ->label('Person Owing')
-                    ->required(),
+                    ->required(), */
                 Forms\Components\TextInput::make('amount')
                     ->numeric()
-                    ->prefix('Rs')
-                    ->required(),
+                    ->required()
+                    ->rules([
+                        fn (Forms\Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
+                            $itemId = $get('expense_item_id');
+                            if (! $itemId) {
+                                return;
+                            }
+
+                            $itemAmount = DB::table('expense_items')->where('id', $itemId)->value('amount');
+
+                            $existingSplits = DB::table('expense_item_splits')
+                                ->where('expense_item_id', $itemId)
+                                ->where('id', '!=', $get('id'))
+                                ->sum('amount');
+
+                            if (($existingSplits + $value) > $itemAmount) {
+                                $fail('The total splits ($'.($existingSplits + $value).") exceed the item cost ($$itemAmount).");
+                            }
+
+                        },
+                    ]),
 
             ]);
     }
@@ -60,12 +80,12 @@ class ExpenseItemSplitResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+                /*  Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                ]), */
             ]);
     }
 
@@ -80,8 +100,8 @@ class ExpenseItemSplitResource extends Resource
     {
         return [
             'index' => Pages\ListExpenseItemSplits::route('/'),
-            'create' => Pages\CreateExpenseItemSplit::route('/create'),
-            'edit' => Pages\EditExpenseItemSplit::route('/{record}/edit'),
+            //   'create' => Pages\CreateExpenseItemSplit::route('/create'),
+            //  'edit' => Pages\EditExpenseItemSplit::route('/{record}/edit'),
         ];
     }
 }
